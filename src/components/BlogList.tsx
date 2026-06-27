@@ -5,6 +5,7 @@ import Link from 'next/link'
 import type { BlogPost } from '@/lib/blog'
 
 const PAGE_SIZE = 9
+const SVR_ADMIN_URL = process.env.NEXT_PUBLIC_SVR_ADMIN_URL || ''
 
 const TAG_COLORS: Record<string, string> = {
   '安全实践': 'bg-red-50 text-red-600',
@@ -119,7 +120,7 @@ export default function BlogList({ initialPosts, initialTotal, initialPage }: Pr
     if (page === currentPage || loading) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/blogs?page=${page}&page_size=${PAGE_SIZE}`)
+      const res = await fetch(`${SVR_ADMIN_URL}/api/v1/public/blogs?page=${page}&page_size=${PAGE_SIZE}`)
       const json = await res.json()
       if (json.code === 0 && json.data?.list) {
         setPosts(json.data.list)
