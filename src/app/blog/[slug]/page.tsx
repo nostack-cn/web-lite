@@ -1,41 +1,61 @@
-import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import BlogContent from '@/components/BlogContent'
-import { getBlogBySlug, getAllPublishedSlugs, type BlogPost } from '@/lib/blog'
+import { getBlogBySlug, type BlogPost } from '@/lib/blog'
 
-interface Props {
-  params: { slug: string }
-}
+export default function BlogDetailPage() {
+  const params = useParams<{ slug: string }>()
+  const [post, setPost] = useState<BlogPost | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
 
-export async function generateStaticParams() {
-  const slugs = await getAllPublishedSlugs()
-  return slugs.map((slug) => ({ slug }))
-}
+  useEffect(() => {
+    if (!params.slug) return
+    getBlogBySlug(params.slug).then((data) => {
+      if (!data) {
+        setNotFound(true)
+      } else {
+        setPost(data)
+      }
+      setLoading(false)
+    })
+  }, [params.slug])
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const post = await getBlogBySlug(params.slug)
-  if (!post) return { title: '博客' }
-  return {
-    title: post.title,
-    description: post.summary || post.title,
-    keywords: post.tags ? post.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
-    alternates: { canonical: `/blog/${post.slug}` },
-    openGraph: {
-      title: post.title,
-      description: post.summary || '',
-      url: `/blog/${post.slug}`,
-      type: 'article',
-      ...(post.cover_image ? { images: [post.cover_image] } : {}),
-    },
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen pt-16 flex items-center justify-center">
+          <div className="flex items-center gap-2 text-sm text-ink-500">
+            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-cyan border-t-transparent" />
+            加载中…
+          </div>
+        </main>
+        <Footer />
+      </>
+    )
   }
-}
 
-export default async function BlogDetailPage({ params }: Props) {
-  const post = await getBlogBySlug(params.slug)
-  if (!post) notFound()
+  if (notFound || !post) {
+    return (
+      <>
+        <Header />
+        <main className="min-h-screen pt-16 flex flex-col items-center justify-center gap-4">
+          <p className="text-lg text-ink-500">文章不存在或已下架</p>
+          <Link href="/blog" className="text-brand-cyan hover:underline">
+            返回博客列表
+          </Link>
+        </main>
+        <Footer />
+      </>
+    )
+  }
+
   return <Detail post={post} />
 }
 

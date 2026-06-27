@@ -1,19 +1,23 @@
-import type { Metadata } from 'next'
+'use client'
+
+import { useState, useEffect } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import BlogList from '@/components/BlogList'
-import { getBlogList, PAGE_SIZE } from '@/lib/blog'
+import { getBlogList, PAGE_SIZE, type BlogPost } from '@/lib/blog'
 
-export const metadata: Metadata = {
-  title: '博客',
-  description: '无栈云引技术博客，分享云计算、域名管理、SSL 证书监控的实践经验与技术思考。',
-  alternates: { canonical: '/blog' },
-}
+export default function BlogPage() {
+  const [posts, setPosts] = useState<BlogPost[]>([])
+  const [total, setTotal] = useState(0)
+  const [loading, setLoading] = useState(true)
 
-export default async function BlogPage() {
-  const result = await getBlogList(1, PAGE_SIZE)
-  const posts = result?.list ?? []
-  const total = result?.total ?? 0
+  useEffect(() => {
+    getBlogList(1, PAGE_SIZE).then((result) => {
+      setPosts(result?.list ?? [])
+      setTotal(result?.total ?? 0)
+      setLoading(false)
+    })
+  }, [])
 
   return (
     <>
@@ -45,7 +49,14 @@ export default async function BlogPage() {
         {/* Blog grid */}
         <section className="pb-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <BlogList initialPosts={posts} initialTotal={total} initialPage={1} />
+            {loading ? (
+              <div className="flex items-center justify-center py-24 gap-2 text-sm text-ink-500">
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-brand-cyan border-t-transparent" />
+                加载中…
+              </div>
+            ) : (
+              <BlogList initialPosts={posts} initialTotal={total} initialPage={1} />
+            )}
           </div>
         </section>
       </main>
